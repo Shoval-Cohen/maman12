@@ -56,13 +56,8 @@ public class TreeNode extends Node {
 
     @Override
     public void handleMessages(Inbox inbox) {
-        System.out.println("this.ID = " + this.ID);
-        System.out.println("nodeColor = " + nodeColor);
-        System.out.println("parent = " + parent);
-        if (parent == null){
+        if (parent == null) {
             this.setNodeColor(0);
-        }
-        if (!stop) {
             for (Edge e : outgoingConnections) {
                 if (!e.endNode.equals(parent)) { // don't send it to the parent
                     System.out.println("sending from this.ID " + this.ID + " TO " + e.endNode);
@@ -70,37 +65,66 @@ public class TreeNode extends Node {
                 }
             }
         }
-        while (inbox.hasNext()) {
-            Message m = inbox.next();
-            if (m instanceof ColorMessage) {
-                if (parent == null || !inbox.getSender().equals(parent)) {
-                    continue;// don't consider messages sent by children
-                }
-                String fatherColor = Integer.toBinaryString(((ColorMessage) m).getColor());
-                String nodeColor = Integer.toBinaryString(this.getNodeColor());
-                // fix to same length
-                fatherColor = padWithZeros(fatherColor, Math.max(fatherColor.length(), nodeColor.length()));
-                nodeColor = padWithZeros(nodeColor, Math.max(fatherColor.length(), nodeColor.length()));
+        System.out.println("this.getNodeColor() = " + this.getNodeColor());
+        if (this.getNodeColor() > 8) {
+            while (inbox.hasNext()) {
+                Message m = inbox.next();
+                if (m instanceof ColorMessage) {
+                    if (parent == null || !inbox.getSender().equals(parent)) {
+                        continue;// don't consider messages sent by children
+                    }
+                    String fatherColor = Integer.toBinaryString(((ColorMessage) m).getColor());
+                    String nodeColor = Integer.toBinaryString(this.getNodeColor());
+                    // fix to same length
+                    fatherColor = padWithZeros(fatherColor, Math.max(fatherColor.length(), nodeColor.length()));
+                    nodeColor = padWithZeros(nodeColor, Math.max(fatherColor.length(), nodeColor.length()));
 
-                System.out.println("fatherColor = " + fatherColor);
-                System.out.println("nodeColor = " + nodeColor);
+                    System.out.println("fatherColor = " + fatherColor);
+                    System.out.println("nodeColor = " + nodeColor);
+                    int index = 0;
+                    char myBitValue = '0';
+                    for (int i = 0; i < fatherColor.length(); i++) {
+                        if (fatherColor.charAt(i) != nodeColor.charAt(i)) {
+                            index = i;
+                            myBitValue = nodeColor.charAt(i);
+                            break;
+                        }
+                    }
+                    String newColor = Integer.toBinaryString(index) + myBitValue;
+                    System.out.println("newColor = " + newColor);
+                    this.setNodeColor(Integer.parseInt(newColor, 2));
 
-                int index = 0;
-                char myBitValue = '0';
-                for (int i = 0; i < fatherColor.length(); i++) {
-                    if (fatherColor.charAt(i) != nodeColor.charAt(i)) {
-                        index = i;
-                        myBitValue = nodeColor.charAt(i);
-                        break;
+
+                    switch (this.getNodeColor()) {
+
+                        case 0:
+                            this.setColor(Color.RED);
+                            break;
+
+                        case 1:
+                            this.setColor(Color.YELLOW);
+                            break;
+
+                        case 2:
+                            this.setColor(Color.GREEN);
+                            break;
+
+                        case 3:
+                            this.setColor(Color.BLUE);
+                            break;
+                        default:
+                            this.setColor(Color.LIGHT_GRAY);
+                            break;
+
+
+                    }
+                    for (Edge e : outgoingConnections) {
+                        if (!e.endNode.equals(parent)) { // don't send it to the parent
+                            System.out.println("sending from this.ID " + this.ID + " TO " + e.endNode);
+                            send(new ColorMessage(this.getNodeColor()), e.endNode);
+                        }
                     }
                 }
-                String newColor = Integer.toBinaryString(index) + myBitValue;
-                System.out.println("newColor = " + newColor);
-                this.setNodeColor(Integer.parseInt(newColor, 2));
-                this.setColor(new Color(this.getNodeColor()));
-            }
-            if (this.getNodeColor() <= 8) {
-                stop = true;
             }
         }
     }
