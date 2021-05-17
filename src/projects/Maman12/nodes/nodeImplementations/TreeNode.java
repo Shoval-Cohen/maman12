@@ -25,19 +25,15 @@ public class TreeNode extends Node {
     public TreeNode parent = null; // the parent in the tree, null if this node is the root
 
 
-    public int nodeColor = this.ID;
-    Map<Integer, List<Integer>> neighborsInColor = new HashMap<>();
+    private int nodeColor = this.ID;
 
-    // Six_VCol variables
-    private boolean isFirstStep = true; // if first ever step
+    // Coloring variables
     private int numOfColors = Tools.getNodeList().size(); // Max number colors for each Six_VCol round (will reduce by 2log(n) every step)
-    private boolean finishedColoring = false; // flag for is VCol_MIS finished
 
-    // VCol_MIS variables
+    // MIS variables
     private int roundColor = 0; // Color round for maximal independent set
     private EMISState state = EMISState.UNDECIDED; // State of node if in or outside the maximal independent set
-    private List<Integer> received = new ArrayList<>(); //  mailbox for VCol_MIS
-    private boolean finishedMis = false; // finished VCol_MIS
+    private final List<Integer> received = new ArrayList<Integer>(); //  mailbox for VCol_MIS
 
 
     public int getNodeColor() {
