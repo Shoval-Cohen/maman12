@@ -147,7 +147,6 @@ public class CustomGlobal extends AbstractCustomGlobal{
 			LeafNode ln = new LeafNode();
 			ln.setPosition((i+1)*dx, posY, 0);
 			ln.finishInitializationWithDefaultModels(true);
-			ln.setNodeColor(ln.ID);
 			leaves.add(ln);
 			toProcess.add(ln);
 		}
@@ -172,7 +171,6 @@ public class CustomGlobal extends AbstractCustomGlobal{
 				if (tn == null) { // start new parent
 					tn = new TreeNode();
 					tn.finishInitializationWithDefaultModels(true);
-					tn.setNodeColor(tn.ID);
 					treeNodes.add(tn);
 					toProcess2.add(tn);
 					leftMostXOffset = currentNode.getPosition().xCoord;
@@ -180,7 +178,6 @@ public class CustomGlobal extends AbstractCustomGlobal{
 				}
 				currentNode.addConnectionTo(tn);
 				currentNode.parent = tn;
-				currentNode.setNodeColor(currentNode.ID);
 				numAdded++;
 				if (numAdded >= fanOut) {
 					tn.setPosition((leftMostXOffset + currentNode.getPosition().xCoord) / 2, posY, 0);
