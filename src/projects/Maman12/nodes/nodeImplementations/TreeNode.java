@@ -27,13 +27,13 @@ public class TreeNode extends Node {
 
     private int nodeColor = this.ID;
 
-    // Coloring variables
+    // Coloring Algorithm variables
     private int numOfColors = Tools.getNodeList().size(); // Max number colors for each Six_VCol round (will reduce by 2log(n) every step)
 
-    // MIS variables
-    private int roundColor = 0; // Color round for maximal independent set
-    private EMISState state = EMISState.UNDECIDED; // State of node if in or outside the maximal independent set
-    private final List<Integer> received = new ArrayList<Integer>(); //  mailbox for VCol_MIS
+    // MIS Algorithm variables
+    private int roundColor = 0;
+    private EMISState state = EMISState.UNDECIDED; // State of node at the maximal independent set
+    private final List<Integer> received = new ArrayList<>(); //  mailbox for VCol_MIS
 
 
     public int getNodeColor() {
@@ -50,7 +50,6 @@ public class TreeNode extends Node {
 
     @Override
     public void handleMessages(Inbox inbox) {
-        System.out.println("this.ID = " + this.ID + " color " + this.getNodeColor());
         // Root color is always 0
         if (parent == null) {
             this.setNodeColor(0);
@@ -59,9 +58,10 @@ public class TreeNode extends Node {
         while (inbox.hasNext()) {
             Message m = inbox.next();
             if (m instanceof ColorMessage && this.getNodeColor() > 8) {
+                // Get new color with diff between color and father color
                 this.setNodeColor(getNewColorFromFatherColor(((ColorMessage) m).getColor()));
             } else if (m instanceof DecideMessage) {
-                System.out.println("Node with id " + this.ID + " not in MIS");
+                // If one of the neighbors entered the MIS, this node will not be in the MIS.
                 state = EMISState.NON_MIS;
                 received.add(((DecideMessage) m).getID());
             } else if (m instanceof UndecideMessage) {
@@ -69,24 +69,30 @@ public class TreeNode extends Node {
             }
         }
 
-        if (this.numOfColors >= 8) { // Still coloring
+        if (this.numOfColors > 0b111) { // Still coloring
+            // reduce number. index of binary view of the color is at range from 0 to log2N.
+            // The another bit of the index value multiply all at 2.
             this.numOfColors = 2 * log2(this.numOfColors);
+            // Informing children the new color
             sendToChildren(new ColorMessage(this.getNodeColor()));
-        }
-
-
-        else if (roundColor <= 8) { // At the MIS stage
+        } else if (roundColor <= 0b111) { // MIS stage
+            // My round and I didn't decided yet
             if (this.getNodeColor() == roundColor && state != EMISState.NON_MIS) {
+                // I'm in!
                 state = EMISState.IN_MIS;
+                // All of the neighbors should know it.
                 sendToNeighbors(new DecideMessage(this.ID));
             } else {
+                // I didn't decided yet
                 sendToNeighbors(new UndecideMessage(this.ID));
             }
 
             if (isReceivedFromAllNeighbors()) {
-                if (roundColor < 8) {
+                // The alg didn't finished
+                if (roundColor < 0b111) {
+                    // Let's get to the new round!
                     roundColor++;
-                } else {
+                } else { // Alg finished
                     if (state == EMISState.IN_MIS) {
                         setColor(Color.GREEN);
                     } else {
@@ -107,12 +113,20 @@ public class TreeNode extends Node {
         return true;
     }
 
+    /**
+     * Send the @msg to all neighbors
+     * @param msg - message to send
+     */
     private void sendToNeighbors(Message msg) {
         for (Edge e : outgoingConnections) {
             send(msg, e.endNode);
         }
     }
 
+    /**
+     * Send the @msg to all children
+     * @param msg - message to send
+     */
     private void sendToChildren(Message msg) {
         for (Edge e : outgoingConnections) {
             if (!e.endNode.equals(parent)) {
@@ -121,10 +135,22 @@ public class TreeNode extends Node {
         }
     }
 
+    /**
+     * @param N - num
+     * @return the log base 2 ceil up
+     */
     private int log2(int N) {
         return (int) Math.ceil(Math.log(N) / Math.log(2));
     }
 
+
+    /**
+     * Finds the new color by the algorithm method.
+     * Get's the first index of different bit of the colors, and concat it to this bit value
+     *
+     * @param parentColor - the color from the parent
+     * @return the new color
+     */
     private int getNewColorFromFatherColor(int parentColor) {
         String fatherColor = Integer.toBinaryString(parentColor);
         String nodeColor = Integer.toBinaryString(this.getNodeColor());
@@ -145,6 +171,11 @@ public class TreeNode extends Node {
     }
 
 
+    /**
+     * @param str String to pad
+     * @param length full length wanted
+     * @return the string padded with zeros if needed to fullLength wanted
+     */
     private String padWithZeros(String str, int length) {
         char[] paddingZeros = new char[length - str.length()];
         Arrays.fill(paddingZeros, '0');
