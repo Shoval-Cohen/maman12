@@ -60,72 +60,42 @@ public class TreeNode extends Node {
             Message m = inbox.next();
             if (m instanceof ColorMessage && this.getNodeColor() > 8) {
                 this.setNodeColor(getNewColorFromFatherColor(((ColorMessage) m).getColor()));
+            } else if (m instanceof DecideMessage) {
+                System.out.println("Node with id " + this.ID + " not in MIS");
+                state = EMISState.NON_MIS;
+                received.add(((DecideMessage) m).getID());
+            } else if (m instanceof UndecideMessage) {
+                received.add(((UndecideMessage) m).getID());
             }
-//            else if (m instanceof DecideMessage) {
-//                System.out.println("Node with id " + this.ID + " not in MIS");
-//                state = EMISState.NON_MIS;
-//                received.add(((DecideMessage) m).getID());
-//            } else if (m instanceof UndecideMessage) {
-//                received.add(((UndecideMessage) m).getID());
-//            }
         }
 
         if (this.numOfColors >= 8) { // Still coloring
             this.numOfColors = 2 * log2(this.numOfColors);
             sendToChildren(new ColorMessage(this.getNodeColor()));
-        } else {
-            switch (this.getNodeColor()) {
-                case 0:
-                    setColor(Color.RED);
-                    break;
-                case 1:
-                    setColor(Color.blue);
-                    break;
-                case 2:
-                    setColor(Color.CYAN);
-                    break;
-                case 3:
-                    setColor(Color.MAGENTA);
-                    break;
-                case 4:
-                    setColor(Color.yellow);
-                    break;
-                case 5:
-                    setColor(Color.PINK);
-                    break;
-                case 6:
-                    setColor(Color.orange);
-                    break;
-                case 7:
-                    setColor(Color.gray);
-                    break;
-                default:
-                    setColor(Color.darkGray);
-                    break;
-            }
-//            setColor(new Color(this.getNodeColor() * 10, this.getNodeColor() * 10, this.getNodeColor() * 10));
         }
-//        else if (roundColor <= 8) { // At the MIS stage
-//            if (this.getNodeColor() == roundColor && state != EMISState.NON_MIS) {
-//                state = EMISState.IN_MIS;
-//                sendToNeighbors(new DecideMessage(this.ID));
-//            } else {
-//                sendToNeighbors(new UndecideMessage(this.ID));
-//            }
-//
-//            if (isReceivedFromAllNeighbors()) {
-//                if (roundColor < 8) {
-//                    roundColor++;
-//                } else {
-//                    if (state == EMISState.IN_MIS) {
-//                        setColor(Color.GREEN);
-//                    } else {
-//                        setColor(Color.RED);
-//                    }
-//                }
-//                received.clear();
-//            }
-//        }
+
+
+        else if (roundColor <= 8) { // At the MIS stage
+            if (this.getNodeColor() == roundColor && state != EMISState.NON_MIS) {
+                state = EMISState.IN_MIS;
+                sendToNeighbors(new DecideMessage(this.ID));
+            } else {
+                sendToNeighbors(new UndecideMessage(this.ID));
+            }
+
+            if (isReceivedFromAllNeighbors()) {
+                if (roundColor < 8) {
+                    roundColor++;
+                } else {
+                    if (state == EMISState.IN_MIS) {
+                        setColor(Color.GREEN);
+                    } else {
+                        setColor(Color.RED);
+                    }
+                }
+                received.clear();
+            }
+        }
     }
 
     private boolean isReceivedFromAllNeighbors() {
