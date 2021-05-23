@@ -37,7 +37,6 @@
 package projects.Maman12;
 
 
-import projects.Maman12.nodes.nodeImplementations.LeafNode;
 import projects.Maman12.nodes.nodeImplementations.TreeNode;
 import sinalgo.configuration.Configuration;
 import sinalgo.nodes.Node;
@@ -131,8 +130,6 @@ public class CustomGlobal extends AbstractCustomGlobal{
 		Runtime.clearAllNodes();
 		treeNodes.clear();
 		leaves.clear();
-		// Reset ID counter of leaf-nodes
-		LeafNode.smallIdCounter = 0;
 		
 		// some vectors to store the nodes that we still need to process
 		Vector<TreeNode> toProcess = new Vector<TreeNode>();

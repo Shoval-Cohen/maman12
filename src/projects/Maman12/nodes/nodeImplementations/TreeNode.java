@@ -13,8 +13,9 @@ import sinalgo.nodes.messages.Message;
 import sinalgo.tools.Tools;
 
 import java.awt.*;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
-import java.util.*;
 
 /**
  * An internal node (or leaf node) of the tree.
@@ -116,6 +117,7 @@ public class TreeNode extends Node {
 
     /**
      * Send the @msg to all neighbors
+     *
      * @param msg - message to send
      */
     private void sendToNeighbors(Message msg) {
@@ -126,6 +128,7 @@ public class TreeNode extends Node {
 
     /**
      * Send the @msg to all children
+     *
      * @param msg - message to send
      */
     private void sendToChildren(Message msg) {
@@ -173,7 +176,7 @@ public class TreeNode extends Node {
 
 
     /**
-     * @param str String to pad
+     * @param str    String to pad
      * @param length full length wanted
      * @return the string padded with zeros if needed to fullLength wanted
      */
