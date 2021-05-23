@@ -93,9 +93,9 @@ public class TreeNode extends Node {
                 // The alg didn't finished
                 if (roundColor == NUM_OF_COLORS) { // Alg finished
                     if (state == EMISState.IN_MIS) {
-                        setColor(Color.GREEN);
-                    } else {
                         setColor(Color.RED);
+                    } else {
+                        setColor(Color.GREEN);
                     }
                 } else {
                     // Let's get to the new round!
