@@ -22,6 +22,7 @@ import java.util.*;
  */
 public class TreeNode extends Node {
 
+    public static final int NUM_OF_COLORS = 8; // to color with. 8 = 0b111
     public TreeNode parent = null; // the parent in the tree, null if this node is the root
 
 
@@ -33,7 +34,7 @@ public class TreeNode extends Node {
     // MIS Algorithm variables
     private int roundColor = 0;
     private EMISState state = EMISState.UNDECIDED; // State of node at the maximal independent set
-    private final List<Integer> received = new ArrayList<>(); //  mailbox for VCol_MIS
+    private final List<Integer> received = new ArrayList<Integer>(); //  mailbox for VCol_MIS
 
 
     public int getNodeColor() {
@@ -69,13 +70,13 @@ public class TreeNode extends Node {
             }
         }
 
-        if (this.numOfColors > 0b111) { // Still coloring
+        if (this.numOfColors > NUM_OF_COLORS) { // Still coloring
             // reduce number. index of binary view of the color is at range from 0 to log2N.
             // The another bit of the index value multiply all at 2.
             this.numOfColors = 2 * log2(this.numOfColors);
             // Informing children the new color
             sendToChildren(new ColorMessage(this.getNodeColor()));
-        } else if (roundColor <= 0b111) { // MIS stage
+        } else if (roundColor <= NUM_OF_COLORS) { // MIS stage
             // My round and I didn't decided yet
             if (this.getNodeColor() == roundColor && state != EMISState.NON_MIS) {
                 // I'm in!
@@ -89,15 +90,15 @@ public class TreeNode extends Node {
 
             if (isReceivedFromAllNeighbors()) {
                 // The alg didn't finished
-                if (roundColor < 0b111) {
-                    // Let's get to the new round!
-                    roundColor++;
-                } else { // Alg finished
+                if (roundColor == NUM_OF_COLORS) { // Alg finished
                     if (state == EMISState.IN_MIS) {
                         setColor(Color.GREEN);
                     } else {
                         setColor(Color.RED);
                     }
+                } else {
+                    // Let's get to the new round!
+                    roundColor++;
                 }
                 received.clear();
             }
