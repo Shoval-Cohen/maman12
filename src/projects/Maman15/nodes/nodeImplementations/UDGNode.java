@@ -6,9 +6,6 @@ import sinalgo.nodes.messages.Inbox;
 
 public class UDGNode extends Node {
 
-    public UDGNode() {
-    }
-
     @Override
     public void handleMessages(Inbox inbox) {
 

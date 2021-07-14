@@ -40,13 +40,25 @@ package projects.Maman15;
 import javax.swing.JOptionPane;
 
 import projects.Maman15.nodes.nodeImplementations.UDGNode;
+import projects.defaultProject.models.connectivityModels.StaticUDG;
+import projects.defaultProject.models.connectivityModels.UDG;
 import projects.defaultProject.models.distributionModels.Random;
+import projects.defaultProject.models.interferenceModels.NoInterference;
+import projects.defaultProject.models.mobilityModels.NoMobility;
+import projects.defaultProject.models.reliabilityModels.ReliableDelivery;
 import sinalgo.Run;
+import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.gui.GUI;
+import sinalgo.models.ConnectivityModelHelper;
+import sinalgo.models.InterferenceModel;
+import sinalgo.models.MobilityModel;
+import sinalgo.models.ReliabilityModel;
 import sinalgo.nodes.Node;
 import sinalgo.runtime.AbstractCustomGlobal;
 import sinalgo.runtime.Runtime;
 import sinalgo.tools.Tools;
+
+import java.util.stream.Stream;
 
 /**
  * This class holds customized global state and methods for the framework.
@@ -96,14 +108,13 @@ public class CustomGlobal extends AbstractCustomGlobal {
      * AbstractCustomGlobal.CustomButton for more details.
      */
     @CustomButton(buttonText = "Create UDG", toolTipText = "Create UDG graph with given num of nodes")
-    public void createUDG() {
-        System.out.println("I'm here!");
+    public void createUDG() throws CorruptConfigurationEntryException {
         int nodesNum = Integer.parseInt(Tools.showQueryDialog("Number of nodes"));
-        System.out.println("nodesNum = " + nodesNum);
         buildUDG(nodesNum);
     }
 
-    private void buildUDG(int nodesNum) {
+    private void buildUDG(int nodesNum) throws CorruptConfigurationEntryException {
+
         if (nodesNum <= 0) {
             Tools.showMessageDialog("The number of nodes needs to be at least 1.\nCreation of UDG aborted.");
             return;
@@ -112,15 +123,31 @@ public class CustomGlobal extends AbstractCustomGlobal {
         // remove all nodes (if any)
         Runtime.clearAllNodes();
 
+        Random random = new Random();
+        ConnectivityModelHelper udg = new UDG();
+        MobilityModel noMobility = new NoMobility();
+        ReliabilityModel reliableDelivery = new ReliableDelivery();
+        InterferenceModel noInterference = new NoInterference();
+
+
         // create nodes
         for (int i = 0; i < nodesNum; i++) {
             Node node = new UDGNode();
-            Random random = new Random();
 			// sets random position
             node.setPosition(random.getNextPosition());
+            // set connectivity model to be static UDG
+            node.setConnectivityModel(udg);
+
+            node.setInterferenceModel(noInterference);
+            node.setMobilityModel(noMobility);
+            node.setReliabilityModel(reliableDelivery);
+
             Runtime.addNode(node);
         }
 
+
+        // Showing the edges on beginning
+        Tools.reevaluateConnections();
 
         // Repaint the GUI as we have added some nodes
         Tools.repaintGUI();
