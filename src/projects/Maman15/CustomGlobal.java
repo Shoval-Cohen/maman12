@@ -103,14 +103,28 @@ public class CustomGlobal extends AbstractCustomGlobal {
     }
 
     /**
-     * An example to add a button to the user interface. In this sample, the button is labeled
-     * with a text 'GO'. Alternatively, you can specify an icon that is shown on the button. See
-     * AbstractCustomGlobal.CustomButton for more details.
+     * Used to create the UDG graph with given nodes.
      */
     @CustomButton(buttonText = "Create UDG", toolTipText = "Create UDG graph with given num of nodes")
     public void createUDG() throws CorruptConfigurationEntryException {
         int nodesNum = Integer.parseInt(Tools.showQueryDialog("Number of nodes"));
         buildUDG(nodesNum);
+    }
+
+    /**
+     * Runs the MIS algorithm.
+     */
+    @CustomButton(buttonText = "Run MIS", toolTipText = "Runs the MIS algorithm")
+    public void runMIS() throws CorruptConfigurationEntryException {
+        int MISRounds = Integer.parseInt(Tools.showQueryDialog("Rounds"));
+        MISAlg(MISRounds);
+    }
+
+    private void MISAlg(int misRounds) {
+        Runtime.nodes.forEach(node -> {
+            ((UDGNode) node).setMisRounds(misRounds);
+            ((UDGNode) node).setActive(true);
+        });
     }
 
     private void buildUDG(int nodesNum) throws CorruptConfigurationEntryException {
@@ -133,7 +147,7 @@ public class CustomGlobal extends AbstractCustomGlobal {
         // create nodes
         for (int i = 0; i < nodesNum; i++) {
             Node node = new UDGNode();
-			// sets random position
+            // sets random position
             node.setPosition(random.getNextPosition());
             // set connectivity model to be static UDG
             node.setConnectivityModel(udg);
