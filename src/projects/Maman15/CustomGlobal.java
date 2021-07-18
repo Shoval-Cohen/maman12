@@ -37,18 +37,13 @@
 package projects.Maman15;
 
 
-import javax.swing.JOptionPane;
-
 import projects.Maman15.nodes.nodeImplementations.UDGNode;
-import projects.defaultProject.models.connectivityModels.StaticUDG;
 import projects.defaultProject.models.connectivityModels.UDG;
 import projects.defaultProject.models.distributionModels.Random;
 import projects.defaultProject.models.interferenceModels.NoInterference;
 import projects.defaultProject.models.mobilityModels.NoMobility;
 import projects.defaultProject.models.reliabilityModels.ReliableDelivery;
-import sinalgo.Run;
 import sinalgo.configuration.CorruptConfigurationEntryException;
-import sinalgo.gui.GUI;
 import sinalgo.models.ConnectivityModelHelper;
 import sinalgo.models.InterferenceModel;
 import sinalgo.models.MobilityModel;
@@ -58,7 +53,7 @@ import sinalgo.runtime.AbstractCustomGlobal;
 import sinalgo.runtime.Runtime;
 import sinalgo.tools.Tools;
 
-import java.util.stream.Stream;
+import javax.swing.*;
 
 /**
  * This class holds customized global state and methods for the framework.
@@ -123,7 +118,7 @@ public class CustomGlobal extends AbstractCustomGlobal {
     private void MISAlg(int misRounds) {
         Runtime.nodes.forEach(node -> {
             ((UDGNode) node).setMisRounds(misRounds);
-            ((UDGNode) node).setActive(true);
+            node.init();
         });
     }
 
