@@ -16,11 +16,12 @@ import java.util.Map;
 
 public class UDGNode extends Node {
     int misRounds;
-    boolean isActive = false;
+    boolean isActive;
     boolean inMis = false;
     int randomNumber = -1;
-    int counter = 0;
+    int counter = 1;
     boolean firstRound;
+    boolean finishedMisStage = false;
 
     Map<Integer, Boolean> biggerNeighborsMisStatus = new HashMap<>();
 
@@ -43,9 +44,11 @@ public class UDGNode extends Node {
 
     @Override
     public void handleMessages(Inbox inbox) {
+        // True for any candidates to talk with them.
+        // If there is no messages maybe all other neighbors already determinated
+        // -> it does not mean that this node is the biggest in his neighborhood
         boolean biggest = inbox.hasNext();
 
-        printMessages(inbox);
         if (firstRound) {
             firstRound = false;
             return;
@@ -58,15 +61,10 @@ public class UDGNode extends Node {
                     biggerNeighborsMisStatus.put(inbox.getSender().ID, ((DecideMessage) m).isInMis());
                 }
                 if (((DecideMessage) m).isInMis()) {
-                    inMis = false;
-                    isActive = false;
-                    biggest = false;
-                    setColor(Color.RED);
-                    broadcast(new DecideMessage(false));
+                    determiningMisState(false);
                 }
             } else if (m instanceof ChosenNumberMessage && isActive) {
                 if (randomNumber <= ((ChosenNumberMessage) m).getNumber()) {
-                    System.out.println("this ID " + ID + " Should not be GREEN");
                     biggest = false;
                 }
             }
@@ -74,30 +72,16 @@ public class UDGNode extends Node {
 
 
         if (isActive && biggest) {
-            inMis = true;
-            isActive = false;
-            System.out.println("Setting " + ID + " color to true");
-            printMessages(inbox);
-            setColor(Color.GREEN);
-            broadcast(new DecideMessage(true));
+            determiningMisState(true);
         }
 
         if (isActive && counter >= misRounds) {
+            printMessages(inbox);
             setColor(Color.BLUE);
             // check if all bigger IDs aren't active
             if (biggerNeighborsMisStatus.keySet().containsAll(biggerNeighbors)) {
-                // if no bigger neighbors is in MIS S.
-                if (biggerNeighborsMisStatus.values().stream().noneMatch(x -> x)) {
-                    isActive = false;
-                    setColor(Color.GREEN);
-                    broadcast(new DecideMessage(true));
-                }
-                // There is bigger neighbor in S
-                else {
-                    isActive = false;
-                    setColor(Color.RED);
-                    broadcast(new DecideMessage(false));
-                }
+                // if no bigger neighbors is in MIS S add this to MIS. opposite it there is bigger neighbors in S
+                determiningMisState(biggerNeighborsMisStatus.values().stream().noneMatch(x -> x));
             }
         }
 
@@ -105,15 +89,27 @@ public class UDGNode extends Node {
         counter++;
     }
 
+    private void determiningMisState(boolean inMis, boolean lonelyNode) {
+        System.out.println("Setting this.ID " + ID + " color");
+        this.inMis = inMis;
+        isActive = false;
+        setColor(inMis ? Color.GREEN : Color.RED);
+        if (!lonelyNode) {
+            broadcast(new DecideMessage(inMis));
+        }
+        finishedMisStage = true;
+    }
+
+    private void determiningMisState(boolean inMis) {
+        determiningMisState(inMis, false);
+
+    }
+
     private void printMessages(Inbox inbox) {
+        inbox.reset();
         while (inbox.hasNext()) {
             Message m1 = inbox.next();
-            if (m1 instanceof ChosenNumberMessage) {
-                System.out.println("((ChosenNumberMessage) m1).getNumber() = " + ((ChosenNumberMessage) m1).getNumber());
-                System.out.println("this.randomNumber = " + this.randomNumber);
-                System.out.println("this rand num is " + (randomNumber < ((ChosenNumberMessage) m1).getNumber() ? "not" : ""
-                ) + " bigger");
-            }
+            System.out.println(ID + " got MSG: " + m1);
         }
         inbox.reset();
     }
@@ -122,13 +118,13 @@ public class UDGNode extends Node {
     @Override
     public void init() {
         if (outgoingConnections.size() == 0) {
-            inMis = true;
-            isActive = false;
-            setColor(Color.GREEN);
+            determiningMisState(true, true);
         } else {
             firstRound = true;
             setColor(Color.BLACK);
             isActive = true;
+            biggerNeighbors.clear();
+            biggerNeighborsMisStatus.clear();
             counter = 0;
             for (Edge edge : outgoingConnections) {
                 if (edge.endNode.ID > this.ID) {
