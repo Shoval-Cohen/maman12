@@ -1,5 +1,6 @@
 package projects.Maman15.nodes.nodeImplementations;
 
+import projects.Maman15.nodes.messages.BfsMessage;
 import projects.Maman15.nodes.messages.ChosenNumberMessage;
 import projects.Maman15.nodes.messages.DecideMessage;
 import sinalgo.configuration.WrongConfigurationException;
@@ -15,17 +16,23 @@ import java.util.List;
 import java.util.Map;
 
 public class UDGNode extends Node {
+    java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
+
+
+    // MIS args
     int misRounds;
     boolean isActive;
     boolean inMis = false;
     int randomNumber = -1;
     int counter = 1;
     boolean finishedMisStage = false;
-
-    Map<Integer, Boolean> biggerNeighborsMisStatus = new HashMap<>();
-
     List<Integer> biggerNeighbors = new ArrayList<>();
-    java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
+    List<Integer> biggerDecidedNeighbors = new ArrayList<>();
+
+    // BFS args
+    Map<Integer, Integer> routingTableToSrc = new HashMap<>();
+    boolean finishedBfsStage;
+
 
     public void setMisRounds(int misRounds) {
         this.misRounds = misRounds;
@@ -48,7 +55,7 @@ public class UDGNode extends Node {
                 ", randomNumber=" + randomNumber +
                 ", counter=" + counter +
                 ", finishedMisStage=" + finishedMisStage +
-                ", biggerNeighborsMisStatus=" + biggerNeighborsMisStatus +
+                ", biggerDecidedNeighbors=" + biggerDecidedNeighbors +
                 ", biggerNeighbors=" + biggerNeighbors +
                 '}';
     }
@@ -69,11 +76,11 @@ public class UDGNode extends Node {
         while (inbox.hasNext()) {
             Message m = inbox.next();
             if (m instanceof DecideMessage) {
-                if (this.ID < inbox.getSender().ID) {
-                    biggerNeighborsMisStatus.put(inbox.getSender().ID, ((DecideMessage) m).isInMis());
-                }
-                if (((DecideMessage) m).isInMis()) {
+                if (isActive && ((DecideMessage) m).isInMis()) {
                     determiningMisState(false);
+                }
+                if (this.ID < inbox.getSender().ID) {
+                    biggerDecidedNeighbors.add(inbox.getSender().ID);
                 }
             } else if (m instanceof ChosenNumberMessage) {
                 if (!isActive) {
@@ -86,6 +93,19 @@ public class UDGNode extends Node {
                 if (randomNumber <= ((ChosenNumberMessage) m).getNumber()) {
                     biggest = false;
                 }
+            } else if (m instanceof BfsMessage) {
+                if (this.ID != ((BfsMessage) m).getRootId()
+                        && !routingTableToSrc.containsKey(((BfsMessage) m).getRootId())) {
+                    // Puts only the node in the shortest way to the root of this message, aka the first one.
+                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender().ID);
+                    if (routingTableToSrc.keySet().size() == outgoingConnections.size()) {
+                        System.out.print("this.ID: " + this.ID + " routingTableToSrc = " + routingTableToSrc);
+                        System.out.println(" this.outgoingConnections.size() = " + this.outgoingConnections.size());
+                        finishedBfsStage = true;
+                    }
+                    // Resend this message to all of this node neighbors
+                    broadcast(m);
+                }
             }
         }
 
@@ -95,6 +115,7 @@ public class UDGNode extends Node {
                 determiningMisState(true);
             }
         }
+
         // End of random rounds.
         else if (isActive) {
             // print this node's state
@@ -102,31 +123,35 @@ public class UDGNode extends Node {
 
             setColor(Color.BLUE);
 
-            // Check if all bigger IDs aren't active
-            if (biggerNeighborsMisStatus.keySet().containsAll(biggerNeighbors)) {
+            // Check if all bigger IDs aren't active, already decides
+            if (biggerDecidedNeighbors.containsAll(biggerNeighbors)) {
                 System.out.println("biggerNeighbors = " + biggerNeighbors);
-                System.out.println("biggerNeighborsMisStatus = " + biggerNeighborsMisStatus.keySet());
-                // if no bigger neighbors is in MIS S add this to MIS. opposite it there is bigger neighbors in S
-                determiningMisState(biggerNeighborsMisStatus.values().stream().noneMatch(x -> x));
+                System.out.println("biggerDecidedNeighbors = " + biggerDecidedNeighbors);
+                // If no bigger neighbors is in MIS S add this to MIS.
+                determiningMisState(true);
             }
         }
     }
 
-    private void determiningMisState(boolean inMis, boolean lonelyNode) {
-        System.out.println("Setting this.ID " + ID + " color");
+    private void determiningMisState(boolean inMis) {
+        System.out.println("Setting this.ID " + ID + " to be " + (inMis? "in": "out") + " MIS");
         this.inMis = inMis;
         isActive = false;
         setColor(inMis ? Color.GREEN : Color.RED);
-        if (!lonelyNode) {
+        if (outgoingConnections.size() > 0) {
             broadcast(new DecideMessage(inMis));
         }
         finishedMisStage = true;
+
+        if (inMis) {
+            // Start BFS
+            if (outgoingConnections.size() > 0) {
+                broadcast(new BfsMessage(this.ID));
+            }
+            routingTableToSrc.put(this.ID, this.ID);
+        }
     }
 
-    private void determiningMisState(boolean inMis) {
-        determiningMisState(inMis, false);
-
-    }
 
     private void printMessages(Inbox inbox) {
         inbox.reset();
@@ -141,14 +166,14 @@ public class UDGNode extends Node {
     @Override
     public void init() {
         if (outgoingConnections.size() == 0) {
-            determiningMisState(true, true);
+            determiningMisState(true);
         } else {
             counter = 1;
             isActive = true;
             setColor(Color.BLACK);
 
             biggerNeighbors.clear();
-            biggerNeighborsMisStatus.clear();
+            biggerDecidedNeighbors.clear();
 
             for (Edge edge : outgoingConnections) {
                 if (edge.endNode.ID > this.ID) {
@@ -157,7 +182,7 @@ public class UDGNode extends Node {
             }
 
             System.out.println("this.ID = " + this.ID);
-            System.out.println("biggerNeighborsMisStatus = " + biggerNeighborsMisStatus.keySet());
+            System.out.println("biggerDecidedNeighbors = " + biggerDecidedNeighbors);
         }
     }
 
