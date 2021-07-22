@@ -8,6 +8,7 @@ import sinalgo.nodes.Node;
 import sinalgo.nodes.edges.Edge;
 import sinalgo.nodes.messages.Inbox;
 import sinalgo.nodes.messages.Message;
+import sinalgo.tools.Tools;
 
 import java.awt.*;
 import java.util.ArrayList;
@@ -17,7 +18,6 @@ import java.util.Map;
 
 public class UDGNode extends Node {
     java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
-
 
     // MIS args
     int misRounds;
@@ -30,9 +30,8 @@ public class UDGNode extends Node {
     List<Integer> biggerDecidedNeighbors = new ArrayList<>();
 
     // BFS args
-    Map<Integer, Integer> routingTableToSrc = new HashMap<>();
+    Map<Integer, Node> routingTableToSrc = new HashMap<>();
     boolean finishedBfsStage;
-
 
     public void setMisRounds(int misRounds) {
         this.misRounds = misRounds;
@@ -48,16 +47,9 @@ public class UDGNode extends Node {
 
     @Override
     public String toString() {
-        return "Node #" + ID + " {" +
-                "misRounds=" + misRounds +
-                ", isActive=" + isActive +
-                ", inMis=" + inMis +
-                ", randomNumber=" + randomNumber +
-                ", counter=" + counter +
-                ", finishedMisStage=" + finishedMisStage +
-                ", biggerDecidedNeighbors=" + biggerDecidedNeighbors +
-                ", biggerNeighbors=" + biggerNeighbors +
-                '}';
+        return "Node #" + ID + " {" + "misRounds=" + misRounds + ", isActive=" + isActive + ", inMis=" + inMis
+                + ", randomNumber=" + randomNumber + ", counter=" + counter + ", finishedMisStage=" + finishedMisStage
+                + ", biggerDecidedNeighbors=" + biggerDecidedNeighbors + ", biggerNeighbors=" + biggerNeighbors + '}';
     }
 
     @Override
@@ -71,7 +63,6 @@ public class UDGNode extends Node {
         // If there is no messages maybe all other neighbors already determined
         // -> it does not mean that this node is the biggest in his neighborhood
         boolean biggest = inbox.hasNext();
-
 
         while (inbox.hasNext()) {
             Message m = inbox.next();
@@ -89,15 +80,17 @@ public class UDGNode extends Node {
                 }
 
                 // Checks the random number that sent at the end of the previous round
-                // with the random number of each neighbors that sent his number at the end of the previous round
+                // with the random number of each neighbors that sent his number at the end of
+                // the previous round
                 if (randomNumber <= ((ChosenNumberMessage) m).getNumber()) {
                     biggest = false;
                 }
             } else if (m instanceof BfsMessage) {
                 if (this.ID != ((BfsMessage) m).getRootId()
                         && !routingTableToSrc.containsKey(((BfsMessage) m).getRootId())) {
-                    // Puts only the node in the shortest way to the root of this message, aka the first one.
-                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender().ID);
+                    // Puts only the node in the shortest way to the root of this message, aka the
+                    // first one.
+                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender());
                     if (routingTableToSrc.keySet().size() == outgoingConnections.size()) {
                         System.out.print("this.ID: " + this.ID + " routingTableToSrc = " + routingTableToSrc);
                         System.out.println(" this.outgoingConnections.size() = " + this.outgoingConnections.size());
@@ -134,7 +127,7 @@ public class UDGNode extends Node {
     }
 
     private void determiningMisState(boolean inMis) {
-        System.out.println("Setting this.ID " + ID + " to be " + (inMis? "in": "out") + " MIS");
+        System.out.println("Setting this.ID " + ID + " to be " + (inMis ? "in" : "out") + " MIS");
         this.inMis = inMis;
         isActive = false;
         setColor(inMis ? Color.GREEN : Color.RED);
@@ -148,10 +141,8 @@ public class UDGNode extends Node {
             if (outgoingConnections.size() > 0) {
                 broadcast(new BfsMessage(this.ID));
             }
-            routingTableToSrc.put(this.ID, this.ID);
         }
     }
-
 
     private void printMessages(Inbox inbox) {
         inbox.reset();
@@ -161,7 +152,6 @@ public class UDGNode extends Node {
         }
         inbox.reset();
     }
-
 
     @Override
     public void init() {
@@ -204,10 +194,46 @@ public class UDGNode extends Node {
 
     }
 
+    /**
+     * todo
+     */
+    @NodePopupMethod(menuText = "Route messag")
+    public void routeMessage() {
+        Tools.getNodeSelectedByUser(destNode -> {
+            if (destNode == null) {
+                return; // the user aborted
+            }
+            Tools.getNodeSelectedByUser(misNode -> {
+                if (misNode == null) {
+                    return; // the user aborted
+                }
+                routeMesage(misNode, destNode);
+            }, "Select a MIS node to which you want to send the MSG.");
+        }, "Select a node to which you want to send the MSG.");
+
+    }
+
+    void routeMesage(Node misNode, Node destNode) {
+
+        if (Tools.getNumberOfMessagesSentInThisRound() > 0) {
+            Tools.showMessageDialog("The preprocces haven't finished yet, try again later");
+            return;
+        }
+        if (!this.routingTableToSrc.containsKey(misNode.ID)) {
+            Tools.showMessageDialog("There is no path to the MIS node with ID #" + misNode.ID);
+            return;
+        }
+
+        this.highlight(true);
+        String data = Tools.showQueryDialog("Enter the data you want to route");
+
+        // Sends msg to to the MIS node via routing
+        send(new Message(misNode.ID, destNode, data), this.routingTableToSrc.get(misNode.ID));
+    }
+
     @Override
     public void checkRequirements() throws WrongConfigurationException {
 
     }
-
 
 }
