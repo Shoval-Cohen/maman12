@@ -1,5 +1,6 @@
 package projects.Maman15.nodes.nodeImplementations;
 
+import projects.Maman15.nodes.messages.DataMessage;
 import projects.Maman15.nodes.messages.BfsMessage;
 import projects.Maman15.nodes.messages.ChosenNumberMessage;
 import projects.Maman15.nodes.messages.DecideMessage;
@@ -99,6 +100,21 @@ public class UDGNode extends Node {
                     // Resend this message to all of this node neighbors
                     broadcast(m);
                 }
+            } else if (m instanceof DataMessage) {
+                this.highlight(true);
+                DataMessage dataMessage = (DataMessage) m;
+                if (dataMessage.getDestNode().ID = this.ID) {
+                    Tools.showMessageDialog("Message arrived succesfully to node with ID #" + this.ID
+                            + " and with data: [" + dataMessage.getData() + "]");
+                            return;
+                }
+                if (dataMessage.getMisNodeId() == this.ID) {
+                    send(dataMessage, dataMessage.getDestNode());
+                    return;
+                }
+                // Keeps sends to the MIS node
+                send(dataMessage,this.routingTableToSrc.get(dataMessage.getMisNodeId());
+            
             }
         }
 
