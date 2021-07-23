@@ -34,10 +34,10 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package projects.Maman15;
+package projects.maman15;
 
 
-import projects.Maman15.nodes.nodeImplementations.UDGNode;
+import projects.maman15.nodes.nodeImplementations.UDGNode;
 import projects.defaultProject.models.connectivityModels.UDG;
 import projects.defaultProject.models.distributionModels.Random;
 import projects.defaultProject.models.interferenceModels.NoInterference;
@@ -104,14 +104,15 @@ public class CustomGlobal extends AbstractCustomGlobal {
     public void createUDG() throws CorruptConfigurationEntryException {
         int nodesNum = Integer.parseInt(Tools.showQueryDialog("Number of nodes"));
         buildUDG(nodesNum);
+        runMIS();
     }
 
     /**
      * Runs the MIS algorithm.
      */
     @CustomButton(buttonText = "Run MIS", toolTipText = "Runs the MIS algorithm")
-    public void runMIS() throws CorruptConfigurationEntryException {
-        int MISRounds = Integer.parseInt(Tools.showQueryDialog("Rounds"));
+    public void runMIS() {
+        int MISRounds = Integer.parseInt(Tools.showQueryDialog("MIS Rounds"));
         MISAlg(MISRounds);
     }
 

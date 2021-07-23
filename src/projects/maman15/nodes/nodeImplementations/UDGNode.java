@@ -1,8 +1,10 @@
-package projects.Maman15.nodes.nodeImplementations;
-=import projects.Maman15.nodes.messages.BfsMessage;
-import projects.Maman15.nodes.messages.ChosenNumberMessage;
-import projects.Maman15.nodes.messages.DataMessage;
-import projects.Maman15.nodes.messages.DecideMessage;
+package projects.maman15.nodes.nodeImplementations;
+
+import projects.defaultProject.nodes.timers.MessageTimer;
+import projects.maman15.nodes.messages.BfsMessage;
+import projects.maman15.nodes.messages.ChosenNumberMessage;
+import projects.maman15.nodes.messages.DataMessage;
+import projects.maman15.nodes.messages.DecideMessage;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.edges.Edge;
@@ -17,7 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 public class UDGNode extends Node {
-    java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
+    final java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
 
 
     // MIS args
@@ -27,12 +29,11 @@ public class UDGNode extends Node {
     int randomNumber = -1;
     int counter = 1;
     boolean finishedMisStage = false;
-    List<Integer> biggerNeighbors = new ArrayList<>();
-    List<Integer> biggerDecidedNeighbors = new ArrayList<>();
+    final List<Integer> biggerNeighbors = new ArrayList<>();
+    final List<Integer> biggerDecidedNeighbors = new ArrayList<>();
 
     // BFS args
-    Map<Integer, Node> routingTableToSrc = new HashMap<>();
-    boolean finishedBfsStage;
+    final Map<Integer, Node> routingTableToSrc = new HashMap<>();
 
     public void setMisRounds(int misRounds) {
         this.misRounds = misRounds;
@@ -105,18 +106,20 @@ public class UDGNode extends Node {
             } else if (m instanceof DataMessage) {
                 this.highlight(true);
                 DataMessage dataMessage = (DataMessage) m;
-                if (dataMessage.getDestNode().ID = this.ID) {
-                    Tools.showMessageDialog("Message arrived succesfully to node with ID #" + this.ID
-                            + " and with data: [" + dataMessage.getData() + "]");
-                            return;
-                }
-                if (dataMessage.getMisNodeId() == this.ID) {
-                    send(dataMessage, dataMessage.getDestNode());
-                    return;
-                }
-                // Keeps sends to the MIS node
-                send(dataMessage,this.routingTableToSrc.get(dataMessage.getMisNodeId());
 
+                // If the message arrived to the destination node, print the message and finish
+                if (this.ID == dataMessage.getDestinationNode().ID) {
+                    Tools.showMessageDialog("Message arrived successfully to node with ID #" + this.ID
+                            + " and with data: [" + dataMessage.getData() + "]");
+                }
+                // If the message arrived to the mis node,
+                // it should send the message to the destination node that should be his direct neighbor
+                else if (this.ID == dataMessage.getMisNodeId()) {
+                    send(dataMessage, dataMessage.getDestinationNode());
+                } else {
+                    // Routing the message towards the MIS node
+                    send(dataMessage, this.routingTableToSrc.get(dataMessage.getMisNodeId()));
+                }
             }
         }
 
@@ -162,17 +165,6 @@ public class UDGNode extends Node {
         }
     }
 
-
-    private void printMessages(Inbox inbox) {
-        inbox.reset();
-        while (inbox.hasNext()) {
-            Message m1 = inbox.next();
-            System.out.println(ID + " got MSG: " + m1);
-        }
-        inbox.reset();
-    }
-
-
     @Override
     public void init() {
         if (outgoingConnections.size() == 0) {
@@ -190,9 +182,6 @@ public class UDGNode extends Node {
                     biggerNeighbors.add(edge.endNode.ID);
                 }
             }
-
-            System.out.println("this.ID = " + this.ID);
-            System.out.println("biggerDecidedNeighbors = " + biggerDecidedNeighbors);
         }
     }
 
@@ -211,6 +200,64 @@ public class UDGNode extends Node {
             // sends the chosen number to all neighbours
             broadcast(new ChosenNumberMessage(randomNumber));
         }
+
+    }
+
+    /*
+     * initiated from node and selects one node and his MIS neighbor
+     */
+    @NodePopupMethod(menuText = "Route message")
+    public void routeMessage() {
+        Tools.getNodeSelectedByUser(destinationNode -> {
+            if (destinationNode == null) {
+                return; // the user aborted
+            }
+            Tools.getNodeSelectedByUser(misNode -> {
+                if (misNode == null) {
+                    return; // the user aborted
+                }
+                routeMessage(misNode, destinationNode);
+            }, "Select a MIS node to which you want to send the MSG.");
+        }, "Select a node to which you want to send the MSG.");
+
+    }
+
+    void routeMessage(Node misNode, Node destinationNode) {
+
+        if (Tools.getNumberOfMessagesSentInThisRound() > 0) {
+            Tools.showMessageDialog("The preprocess haven't finished yet, try again later");
+            return;
+        }
+        if (!this.routingTableToSrc.containsKey(misNode.ID)) {
+            Tools.showMessageDialog("There is no path to the MIS node with ID #" + misNode.ID);
+            return;
+        }
+
+        this.highlight(true);
+        String data = Tools.showQueryDialog("Enter the data you want to route");
+
+        // Sends msg to to the MIS node via routing
+        DataMessage dataMessage = new DataMessage(misNode.ID, destinationNode, data);
+        System.out.print("this.ID = " + this.ID);
+        System.out.println(" dataMessage = " + dataMessage);
+        System.out.println("this.routingTableToSrc.get(misNode.ID) = " + this.routingTableToSrc.get(misNode.ID));
+        sendDataMessage(dataMessage, this.routingTableToSrc.get(misNode.ID));
+    }
+
+
+    /**
+     * Sends a data message to a neighbor.
+     *
+     * @param dataMessage The data message.
+     * @param to          Receiver node.
+     */
+    private void sendDataMessage(DataMessage dataMessage, Node to) {
+
+        // In Synchronous mode, a node is only allowed to send messages during the
+        // execution of its step. We can easily schedule to send this message during the
+        // next step by setting a timer. The MessageTimer from the default project already
+        // implements the desired functionality.
+        new MessageTimer(dataMessage, to).startRelative(Tools.getRandomNumberGenerator().nextDouble(), this);
 
     }
 

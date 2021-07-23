@@ -1,4 +1,4 @@
-package projects.Maman15.nodes.messages;
+package projects.maman15.nodes.messages;
 
 import sinalgo.nodes.messages.Message;
 
@@ -7,7 +7,7 @@ import sinalgo.nodes.messages.Message;
  */
 public class ChosenNumberMessage extends Message {
 
-    int number;
+    final int number;
 
     public int getNumber() {
         return number;

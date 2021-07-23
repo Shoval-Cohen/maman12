@@ -1,4 +1,4 @@
-package projects.Maman15.nodes.messages;
+package projects.maman15.nodes.messages;
 
 import sinalgo.nodes.messages.Message;
 
@@ -7,7 +7,7 @@ import sinalgo.nodes.messages.Message;
  */
 public class BfsMessage extends Message {
 
-    int rootId;
+    final int rootId;
 
     public int getRootId() {
         return rootId;

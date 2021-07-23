@@ -1,4 +1,4 @@
-package projects.Maman15.nodes.messages;
+package projects.maman15.nodes.messages;
 
 import sinalgo.nodes.messages.Message;
 
