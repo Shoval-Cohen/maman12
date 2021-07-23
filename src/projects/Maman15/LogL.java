@@ -34,7 +34,7 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package projects.maman15;
+package projects.Maman15;
 
 /**
  * Enumerates the log-levels. Levels above THRESHOLD will be included

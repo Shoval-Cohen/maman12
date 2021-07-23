@@ -1,10 +1,10 @@
-package projects.maman15.nodes.nodeImplementations;
+package projects.Maman15.nodes.nodeImplementations;
 
+import projects.Maman15.nodes.messages.BfsMessage;
+import projects.Maman15.nodes.messages.ChosenNumberMessage;
+import projects.Maman15.nodes.messages.DataMessage;
+import projects.Maman15.nodes.messages.DecideMessage;
 import projects.defaultProject.nodes.timers.MessageTimer;
-import projects.maman15.nodes.messages.BfsMessage;
-import projects.maman15.nodes.messages.ChosenNumberMessage;
-import projects.maman15.nodes.messages.DataMessage;
-import projects.maman15.nodes.messages.DecideMessage;
 import sinalgo.configuration.WrongConfigurationException;
 import sinalgo.nodes.Node;
 import sinalgo.nodes.edges.Edge;
@@ -23,16 +23,15 @@ public class UDGNode extends Node {
 
     // MIS args
     int misRounds;
-    boolean isActive;
-    boolean inMis = false;
+    boolean isActive = true;
     int randomNumber = -1;
     int counter = 1;
-    boolean finishedMisStage = false;
+
     final List<Integer> biggerNeighbors = new ArrayList<>();
     final List<Integer> biggerDecidedNeighbors = new ArrayList<>();
 
     // BFS args
-    final Map<Integer, Node> routingTableToSrc = new HashMap<>();
+    final Map<Integer, Node> routingTable = new HashMap<>();
 
     public void setMisRounds(int misRounds) {
         this.misRounds = misRounds;
@@ -42,21 +41,24 @@ public class UDGNode extends Node {
         isActive = active;
     }
 
+    public Map<Integer, Node> getRoutingTable() {
+        return routingTable;
+    }
+
     @Override
     public void preStep() {
     }
 
     @Override
     public String toString() {
-        return "Node #" + ID + " {" +
+        return "UDGNode{" +
                 "misRounds=" + misRounds +
                 ", isActive=" + isActive +
-                ", inMis=" + inMis +
                 ", randomNumber=" + randomNumber +
                 ", counter=" + counter +
-                ", finishedMisStage=" + finishedMisStage +
-                ", biggerDecidedNeighbors=" + biggerDecidedNeighbors +
                 ", biggerNeighbors=" + biggerNeighbors +
+                ", biggerDecidedNeighbors=" + biggerDecidedNeighbors +
+                ", routingTable=" + routingTable +
                 '}';
     }
 
@@ -67,10 +69,8 @@ public class UDGNode extends Node {
             return;
         }
 
-        // True for any candidates to talk with them. not lonely nodes
-        // If there is no messages maybe all other neighbors already determined
-        // -> it does not mean that this node is the biggest in his neighborhood
-        boolean biggest = inbox.hasNext();
+        boolean biggest = true;
+        boolean numbersArrived = false;
 
         while (inbox.hasNext()) {
             Message m = inbox.next();
@@ -82,6 +82,7 @@ public class UDGNode extends Node {
                     biggerDecidedNeighbors.add(inbox.getSender().ID);
                 }
             } else if (m instanceof ChosenNumberMessage) {
+                numbersArrived = true;
                 if (!isActive) {
                     // Ignore this message
                     continue;
@@ -94,11 +95,12 @@ public class UDGNode extends Node {
                     biggest = false;
                 }
             } else if (m instanceof BfsMessage) {
+                // Checks if it's the first time that this node gets BFS message from this root node
                 if (this.ID != ((BfsMessage) m).getRootId()
-                        && !routingTableToSrc.containsKey(((BfsMessage) m).getRootId())) {
+                        && !routingTable.containsKey(((BfsMessage) m).getRootId())) {
                     // Puts only the node in the shortest way to the root of this message, aka the
                     // first one.
-                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender());
+                    routingTable.put(((BfsMessage) m).getRootId(), inbox.getSender());
                     // Resend this message to all of this node neighbors
                     broadcast(m);
                 }
@@ -107,54 +109,55 @@ public class UDGNode extends Node {
                 DataMessage dataMessage = (DataMessage) m;
 
                 // If the message arrived to the destination node, print the message and finish
-                if (this.ID == dataMessage.getDestinationNode().ID) {
+                if (this.ID == dataMessage.getDestinationNodeId()) {
                     Tools.showMessageDialog("Message arrived successfully to node with ID #" + this.ID
                             + " and with data: [" + dataMessage.getData() + "]");
                 }
                 // If the message arrived to the mis node,
                 // it should send the message to the destination node that should be his direct neighbor
                 else if (this.ID == dataMessage.getMisNodeId()) {
-                    send(dataMessage, dataMessage.getDestinationNode());
+                    Node destinationNode = new UDGNode();
+                    for (Edge edge : this.outgoingConnections) {
+                        if (edge.endNode.ID == dataMessage.getDestinationNodeId()) {
+                            destinationNode = edge.endNode;
+                            break;
+                        }
+                    }
+                    send(dataMessage, destinationNode);
                 } else {
                     // Routing the message towards the MIS node
-                    send(dataMessage, this.routingTableToSrc.get(dataMessage.getMisNodeId()));
+                    send(dataMessage, this.routingTable.get(dataMessage.getMisNodeId()));
                 }
             }
         }
 
         // One more round then t due to 1 round lag of sending the first number
         if (counter <= misRounds + 1) {
-            if (isActive && biggest) {
+            if (isActive && numbersArrived && biggest) {
                 determiningMisState(true);
             }
         }
 
         // End of random rounds.
         else if (isActive) {
-            // print this node's state
-            System.out.println(this);
-
+            // coloring the nodes at this stage in blue
             setColor(Color.BLUE);
 
             // Check if all bigger IDs aren't active, already decides
             if (biggerDecidedNeighbors.containsAll(biggerNeighbors)) {
-                System.out.println("biggerNeighbors = " + biggerNeighbors);
-                System.out.println("biggerDecidedNeighbors = " + biggerDecidedNeighbors);
-                // If no bigger neighbors is in MIS S add this to MIS.
+                // Got here just if there is no MIS neighbor.
+                // If there is MIS neighbor he will send @DecideMessage to this node
                 determiningMisState(true);
             }
         }
     }
 
     private void determiningMisState(boolean inMis) {
-        System.out.println("Setting this.ID " + ID + " to be " + (inMis ? "in" : "out") + " MIS");
-        this.inMis = inMis;
-        isActive = false;
+        this.isActive = false;
         setColor(inMis ? Color.GREEN : Color.RED);
         if (outgoingConnections.size() > 0) {
             broadcast(new DecideMessage(inMis));
         }
-        finishedMisStage = true;
 
         if (inMis) {
             // Start BFS
@@ -227,7 +230,7 @@ public class UDGNode extends Node {
             Tools.showMessageDialog("The preprocess haven't finished yet, try again later");
             return;
         }
-        if (!this.routingTableToSrc.containsKey(misNode.ID)) {
+        if (!this.routingTable.containsKey(misNode.ID)) {
             Tools.showMessageDialog("There is no path to the MIS node with ID #" + misNode.ID);
             return;
         }
@@ -236,11 +239,11 @@ public class UDGNode extends Node {
         String data = Tools.showQueryDialog("Enter the data you want to route");
 
         // Sends msg to to the MIS node via routing
-        DataMessage dataMessage = new DataMessage(misNode.ID, destinationNode, data);
+        DataMessage dataMessage = new DataMessage(misNode.ID, destinationNode.ID, data);
         System.out.print("this.ID = " + this.ID);
         System.out.println(" dataMessage = " + dataMessage);
-        System.out.println("this.routingTableToSrc.get(misNode.ID) = " + this.routingTableToSrc.get(misNode.ID));
-        sendDataMessage(dataMessage, this.routingTableToSrc.get(misNode.ID));
+        System.out.println("this.routingTableToSrc.get(misNode.ID) = " + this.routingTable.get(misNode.ID));
+        sendDataMessage(dataMessage, this.routingTable.get(misNode.ID));
     }
 
 

@@ -34,15 +34,15 @@
  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 */
-package projects.maman15;
+package projects.Maman15;
 
 
+import projects.Maman15.nodes.nodeImplementations.UDGNode;
 import projects.defaultProject.models.connectivityModels.UDG;
 import projects.defaultProject.models.distributionModels.Random;
 import projects.defaultProject.models.interferenceModels.NoInterference;
 import projects.defaultProject.models.mobilityModels.NoMobility;
 import projects.defaultProject.models.reliabilityModels.ReliableDelivery;
-import projects.maman15.nodes.nodeImplementations.UDGNode;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.models.ConnectivityModelHelper;
 import sinalgo.models.InterferenceModel;
@@ -54,6 +54,7 @@ import sinalgo.runtime.Runtime;
 import sinalgo.tools.Tools;
 
 import javax.swing.*;
+import java.util.stream.StreamSupport;
 
 /**
  * This class holds customized global state and methods for the framework.
@@ -107,42 +108,70 @@ public class CustomGlobal extends AbstractCustomGlobal {
         runMIS();
     }
 
-    /**
-     * Runs the MIS algorithm.
-     */
-    @CustomButton(buttonText = "Run MIS", toolTipText = "Runs the MIS algorithm")
     public void runMIS() {
         int MISRounds = Integer.parseInt(Tools.showQueryDialog("MIS Rounds"));
-        MISAlg(MISRounds);
-    }
-
-    private void MISAlg(int misRounds) {
         Runtime.nodes.forEach(node -> {
-            ((UDGNode) node).setMisRounds(misRounds);
+            ((UDGNode) node).setMisRounds(MISRounds);
             node.init();
         });
     }
 
+    /**
+     * Return the max degree
+     */
+    @CustomButton(buttonText = "Max degree", toolTipText = "Return the max degree")
+    public void maxDegree() {
+        Tools.getTextOutputPrintStream().println("Max degree = " + getMaxDegree());
+    }
+
+    private int getMaxDegree() {
+        return StreamSupport.stream(Tools.getNodeList().spliterator(), false)
+                .mapToInt(node -> node.outgoingConnections.size())
+                .max()
+                .orElse(0);
+    }
+
+    /**
+     * Return the max routing table
+     */
+    @CustomButton(buttonText = "Routing table", toolTipText = "Return the max routing table")
+    public void maxRoutingTable() {
+        int maxRoutingTable = StreamSupport.stream(Tools.getNodeList().spliterator(), false)
+                .filter(node -> node instanceof UDGNode)
+                .mapToInt(node -> ((UDGNode) node).getRoutingTable().size())
+                .max()
+                .orElse(0);
+
+        Tools.getTextOutputPrintStream().println("Max routing table = " + maxRoutingTable);
+    }
+
+    /**
+     * Return the max routing table
+     */
+    @CustomButton(buttonText = "Statistic", toolTipText = "Full statistic")
+    public void stats() {
+        Tools.getTextOutputPrintStream().println("Num of nodes = " + Runtime.nodes.size());
+        maxDegree();
+        maxRoutingTable();
+    }
+
+
     private void buildUDG(int nodesNum) throws CorruptConfigurationEntryException {
-
-
         if (nodesNum <= 0) {
             Tools.showMessageDialog("The number of nodes needs to be at least 1.\nCreation of UDG aborted.");
             return;
         }
-
+        Tools.getTextOutputPrintStream().println("~~~~~~~~~~~~~~~~~~~");
+        Tools.getTextOutputPrintStream().println("Creating UDG graph with " + nodesNum + " nodes.");
 
         // remove all nodes (if any)
         Runtime.clearAllNodes();
-
-        // TODO: 20/07/2021 Check about use Tools.generateNodes instead
 
         Random random = new Random();
         ConnectivityModelHelper udg = new UDG();
         MobilityModel noMobility = new NoMobility();
         ReliabilityModel reliableDelivery = new ReliableDelivery();
         InterferenceModel noInterference = new NoInterference();
-
 
         // create nodes
         for (int i = 0; i < nodesNum; i++) {
