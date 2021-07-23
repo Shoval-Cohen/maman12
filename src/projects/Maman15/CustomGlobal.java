@@ -124,13 +124,18 @@ public class CustomGlobal extends AbstractCustomGlobal {
 
     private void buildUDG(int nodesNum) throws CorruptConfigurationEntryException {
 
+
         if (nodesNum <= 0) {
             Tools.showMessageDialog("The number of nodes needs to be at least 1.\nCreation of UDG aborted.");
             return;
         }
 
+
+
         // remove all nodes (if any)
         Runtime.clearAllNodes();
+
+        // TODO: 20/07/2021 Check about use Tools.generateNodes instead
 
         Random random = new Random();
         ConnectivityModelHelper udg = new UDG();
