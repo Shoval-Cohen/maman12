@@ -40,7 +40,7 @@ package projects.maman15;
  * Enumerates the log-levels. Levels above THRESHOLD will be included
  * in the log-file. The levels below (with a higher enumeration value) not.
  */
-public class LogL extends sinalgo.tools.logging.LogL{
+public class LogL extends sinalgo.tools.logging.LogL {
 }
 
 

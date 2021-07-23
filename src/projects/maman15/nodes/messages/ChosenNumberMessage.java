@@ -9,12 +9,12 @@ public class ChosenNumberMessage extends Message {
 
     final int number;
 
-    public int getNumber() {
-        return number;
-    }
-
     public ChosenNumberMessage(int number) {
         this.number = number;
+    }
+
+    public int getNumber() {
+        return number;
     }
 
     @Override

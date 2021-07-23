@@ -9,12 +9,12 @@ public class BfsMessage extends Message {
 
     final int rootId;
 
-    public int getRootId() {
-        return rootId;
-    }
-
     public BfsMessage(int rootId) {
         this.rootId = rootId;
+    }
+
+    public int getRootId() {
+        return rootId;
     }
 
     @Override

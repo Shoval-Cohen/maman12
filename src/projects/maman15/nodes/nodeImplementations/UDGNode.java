@@ -21,7 +21,6 @@ import java.util.Map;
 public class UDGNode extends Node {
     final java.util.Random rand = sinalgo.tools.Tools.getRandomNumberGenerator();
 
-
     // MIS args
     int misRounds;
     boolean isActive;

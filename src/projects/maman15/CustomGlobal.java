@@ -37,12 +37,12 @@
 package projects.maman15;
 
 
-import projects.maman15.nodes.nodeImplementations.UDGNode;
 import projects.defaultProject.models.connectivityModels.UDG;
 import projects.defaultProject.models.distributionModels.Random;
 import projects.defaultProject.models.interferenceModels.NoInterference;
 import projects.defaultProject.models.mobilityModels.NoMobility;
 import projects.defaultProject.models.reliabilityModels.ReliableDelivery;
+import projects.maman15.nodes.nodeImplementations.UDGNode;
 import sinalgo.configuration.CorruptConfigurationEntryException;
 import sinalgo.models.ConnectivityModelHelper;
 import sinalgo.models.InterferenceModel;
@@ -130,7 +130,6 @@ public class CustomGlobal extends AbstractCustomGlobal {
             Tools.showMessageDialog("The number of nodes needs to be at least 1.\nCreation of UDG aborted.");
             return;
         }
-
 
 
         // remove all nodes (if any)
