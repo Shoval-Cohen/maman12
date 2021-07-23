@@ -1,5 +1,6 @@
 package projects.Maman15.nodes.messages;
 
+import javafx.scene.Node;
 import sinalgo.nodes.messages.Message;
 
 /**
@@ -8,18 +9,29 @@ import sinalgo.nodes.messages.Message;
 public class DataMessage extends Message {
 
     int misNodeId;
-    int destinationNodeId;
+    Node destNode;
     String data;
 
-    public DataMessage(int misNodeId, int destinationNodeId, String data) {
+    DataMessage(int misNodeId, Node destNode, String data) {
         this.misNodeId = misNodeId;
-        this.destinationNodeId = destinationNodeId;
+        this.destNode = destNode;
         this.data = data;
+    }
+
+    public int getMisNodeId() {
+        return misNodeId;
+    }
+
+    public Node getDestNode() {
+        return destNode;
+    }
+
+    public String getData() {
+        return data;
     }
 
     @Override
     public Message clone() {
         return this; // read-only policy
     }
-
 }

@@ -1,6 +1,5 @@
 package projects.Maman15.nodes.messages;
 
-import projects.Maman12.nodes.messages.IdMessage;
 import sinalgo.nodes.messages.Message;
 
 /**
@@ -26,6 +25,6 @@ public class DecideMessage extends Message {
 
 	@Override
 	public Message clone() {
-		return this; // read-only policy 
+		return this; // read-only policy
 	}
 }

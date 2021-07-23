@@ -1,6 +1,5 @@
 package projects.Maman15.nodes.nodeImplementations;
-
-import projects.Maman15.nodes.messages.BfsMessage;
+=import projects.Maman15.nodes.messages.BfsMessage;
 import projects.Maman15.nodes.messages.ChosenNumberMessage;
 import projects.Maman15.nodes.messages.DataMessage;
 import projects.Maman15.nodes.messages.DecideMessage;
@@ -32,9 +31,8 @@ public class UDGNode extends Node {
     List<Integer> biggerDecidedNeighbors = new ArrayList<>();
 
     // BFS args
-    Map<Integer, Integer> routingTableToSrc = new HashMap<>();
+    Map<Integer, Node> routingTableToSrc = new HashMap<>();
     boolean finishedBfsStage;
-
 
     public void setMisRounds(int misRounds) {
         this.misRounds = misRounds;
@@ -74,7 +72,6 @@ public class UDGNode extends Node {
         // -> it does not mean that this node is the biggest in his neighborhood
         boolean biggest = inbox.hasNext();
 
-
         while (inbox.hasNext()) {
             Message m = inbox.next();
             if (m instanceof DecideMessage) {
@@ -91,18 +88,35 @@ public class UDGNode extends Node {
                 }
 
                 // Checks the random number that sent at the end of the previous round
-                // with the random number of each neighbors that sent his number at the end of the previous round
+                // with the random number of each neighbors that sent his number at the end of
+                // the previous round
                 if (randomNumber <= ((ChosenNumberMessage) m).getNumber()) {
                     biggest = false;
                 }
             } else if (m instanceof BfsMessage) {
                 if (this.ID != ((BfsMessage) m).getRootId()
                         && !routingTableToSrc.containsKey(((BfsMessage) m).getRootId())) {
-                    // Puts only the node in the shortest way to the root of this message, aka the first one.
-                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender().ID);
+                    // Puts only the node in the shortest way to the root of this message, aka the
+                    // first one.
+                    routingTableToSrc.put(((BfsMessage) m).getRootId(), inbox.getSender());
                     // Resend this message to all of this node neighbors
                     broadcast(m);
                 }
+            } else if (m instanceof DataMessage) {
+                this.highlight(true);
+                DataMessage dataMessage = (DataMessage) m;
+                if (dataMessage.getDestNode().ID = this.ID) {
+                    Tools.showMessageDialog("Message arrived succesfully to node with ID #" + this.ID
+                            + " and with data: [" + dataMessage.getData() + "]");
+                            return;
+                }
+                if (dataMessage.getMisNodeId() == this.ID) {
+                    send(dataMessage, dataMessage.getDestNode());
+                    return;
+                }
+                // Keeps sends to the MIS node
+                send(dataMessage,this.routingTableToSrc.get(dataMessage.getMisNodeId());
+
             }
         }
 
@@ -145,7 +159,6 @@ public class UDGNode extends Node {
             if (outgoingConnections.size() > 0) {
                 broadcast(new BfsMessage(this.ID));
             }
-            routingTableToSrc.put(this.ID, this.ID);
         }
     }
 
@@ -163,7 +176,6 @@ public class UDGNode extends Node {
     @Override
     public void init() {
         if (outgoingConnections.size() == 0) {
-            broadcast(new ChosenNumberMessage(1));
             determiningMisState(true);
         } else {
             counter = 1;
@@ -184,38 +196,6 @@ public class UDGNode extends Node {
         }
     }
 
-
-    @NodePopupMethod(menuText = "Send routing message")
-    public void routeMessage() {
-        Tools.getNodeSelectedByUser(destNode -> {
-            if (destNode == null) {
-                return; // the user aborted
-            }
-            Tools.getNodeSelectedByUser(misNode -> {
-                if (misNode == null) {
-                    return; // the user aborted
-                }
-                // route message from this node threw misNode to destNode
-                routeMessage((UDGNode) misNode, (UDGNode) destNode);
-            }, "Select a MIS node which next to the destination node.");
-        }, "Select a node to which you want to send the routing message.");
-    }
-
-    private void routeMessage(UDGNode misNode, UDGNode destNode) {
-        if (Tools.getNumberOfMessagesSentInThisRound() > 0) {
-            Tools.showMessageDialog("The preprocess routing algorithm haven't finished yet. Try again later!");
-            return;
-        }
-        if (!routingTableToSrc.containsKey(misNode.ID)) {
-            Tools.showMessageDialog("There is no route to the give mis node with ID: [" + misNode.ID + "]. Try again!");
-            return;
-        }
-        String data = Tools.showQueryDialog("Enter information you want to send to the destination node");
-
-        // Sends the message to the misNode.
-//        send(new DataMessage(misNode.ID, destNode.ID, data), );
-    }
-
     @Override
     public void neighborhoodChange() {
 
@@ -226,7 +206,7 @@ public class UDGNode extends Node {
         counter++;
 
         if (counter <= misRounds) {
-            randomNumber = Tools.getRandomNumberGenerator().nextInt((int) (1 + (Math.pow(misRounds, 10))));
+            randomNumber = rand.nextInt((int) (1 + (Math.pow(misRounds, 10))));
 
             // sends the chosen number to all neighbours
             broadcast(new ChosenNumberMessage(randomNumber));
